@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<style>
+  :root {
+    --ink: #1d2433; --muted: #5b6475; --line: #e3e6ec; --bg: #ffffff; --panel: #f6f7f9;
+    --accent: #2f5bd3; --good: #1b7f4b; --good-bg: #e5f4ec; --bad: #b42318; --bad-bg: #fdecea;
+    --bar: #9fb3e6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e6e9ef; --muted: #a2a9b8; --line: #2c3240; --bg: #141821; --panel: #1b202b;
+      --accent: #7c9cff; --good: #5fd39a; --good-bg: #16352a; --bad: #ff8a80; --bad-bg: #3a1c1c;
+      --bar: #3f5aa8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--panel); border-radius: 10px; padding: 12px 14px; }
+  .kpi b { display: block; font-size: 22px; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  ul.findings { padding-left: 18px; }
+  ul.findings li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td.good { color: var(--good); background: var(--good-bg); }
+  td.bad { color: var(--bad); background: var(--bad-bg); }
+  .note { color: var(--muted); font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  svg .lbl { fill: var(--ink); font-size: 13px; }
+  svg .val { fill: var(--muted); font-size: 12px; }
+  svg .bar { fill: var(--bar); }
+  svg .bar.best { fill: var(--accent); }
+  .matrix td { text-align: center; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 12px; }
+  @media print { h2 { break-after: avoid; } table { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>{{ title }}</h1>
+  <p class="sub">{{ meta.n_series | fmt('int') }} series &middot; forecasts {{ meta.first_forecast }} to {{ meta.last_forecast }}
+  &middot; steps: {% for s in steps %}{{ s }}{% if not loop.last %} &rarr; {% endif %}{% endfor %} &middot; metric: {{ metric_label }}
+  {% if meta.source == 'backtest' %}&middot; rolling-origin backtest, {{ meta.n_windows }} windows of {{ meta.h }} periods{% endif %}</p>
+
+  <div class="kpis">
+    {% for row in stairs %}
+    <div class="kpi"><b>{{ row[metric] | fmt('pct' if pct else 'num') }}</b><span>{{ row.step }}{% if not loop.first %} &middot; FVA {{ row.fva_vs_previous | fmt('pp' if pct else 'signed') }}{% endif %}</span></div>
+    {% endfor %}
+  </div>
+
+  <h2>Findings</h2>
+  <ul class="findings">
+    {% for f in findings %}<li>{{ f }}</li>{% endfor %}
+  </ul>
+
+  <h2>The stairstep</h2>
+  <p class="note">Each step should beat the one before it. Positive FVA means the step reduced error; negative means it added error. Highlighted bar = lowest error.</p>
+  {{ chart | safe }}
+  <div class="scroll"><table>
+    <tr><th>Step</th><th>{{ metric_label }}</th><th>Bias</th><th>FVA vs previous</th><th>FVA vs {{ steps[0] }}</th><th>Actual</th><th>Forecast</th></tr>
+    {% for row in stairs %}
+    <tr>
+      <td>{{ row.step }}</td>
+      <td>{{ row[metric] | fmt('pct' if pct else 'num') }}</td>
+      <td>{{ row.bias_pct | fmt('pct') }}</td>
+      <td class="{{ row.fva_vs_previous | fva_class }}">{{ row.fva_vs_previous | fmt('pp' if pct else 'signed') }}</td>
+      <td class="{{ row.fva_vs_first | fva_class }}">{% if loop.first %}&nbsp;{% else %}{{ row.fva_vs_first | fmt('pp' if pct else 'signed') }}{% endif %}</td>
+      <td>{{ row.actual | fmt }}</td>
+      <td>{{ row.forecast_total | fmt }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+
+  <h2>How often each step helps, item by item</h2>
+  <div class="scroll"><table>
+    <tr><th>Step</th><th>Compared to</th><th>Series</th><th>Better</th><th>Worse</th><th>Volume in better</th><th>Volume in worse</th></tr>
+    {% for r in scorecard %}
+    <tr><td>{{ r.step }}</td><td>{{ r.compared_to }}</td><td>{{ r.series | fmt('int') }}</td>
+      <td>{{ r.share_better | fmt('pct') }}</td><td>{{ r.share_worse | fmt('pct') }}</td>
+      <td>{{ r.actual_in_better | fmt }}</td><td>{{ r.actual_in_worse | fmt }}</td></tr>
+    {% endfor %}
+  </table></div>
+
+  <h2>By demand class</h2>
+  <p class="note">Smooth, erratic, intermittent and lumpy series (Syntetos-Boylan) need different methods and different accuracy expectations. Cells show {{ metric_label }}; colour shows FVA against the step to the left.</p>
+  <div class="scroll"><table>
+    <tr><th>Demand class</th><th>Rows</th>{% for s in steps %}<th>{{ s }}</th>{% endfor %}</tr>
+    {% for r in class_rows %}
+    <tr><td>{{ r.group }}</td><td>{{ r.n | fmt('int') }}</td>
+      {% for c in r.cells %}<td class="{{ c.fva | fva_class if not loop.first else 'neutral' }}">{{ c.value | fmt('pct' if pct else 'num') }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table></div>
+
+  <h2>By ABC class</h2>
+  <div class="scroll"><table>
+    <tr><th>ABC</th><th>Rows</th>{% for s in steps %}<th>{{ s }}</th>{% endfor %}</tr>
+    {% for r in abc_rows %}
+    <tr><td>{{ r.group }}</td><td>{{ r.n | fmt('int') }}</td>
+      {% for c in r.cells %}<td class="{{ c.fva | fva_class if not loop.first else 'neutral' }}">{{ c.value | fmt('pct' if pct else 'num') }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table></div>
+
+  <h2>ABC-XYZ matrix (series count)</h2>
+  <table class="matrix" style="max-width:360px">
+    <tr><th></th><th>X stable</th><th>Y variable</th><th>Z unpredictable</th></tr>
+    {% for r in matrix %}<tr><td><b>{{ r.abc }}</b></td><td>{{ r.X }}</td><td>{{ r.Y }}</td><td>{{ r.Z }}</td></tr>{% endfor %}
+  </table>
+
+  {% if overview %}
+  <h2>Overrides: where judgment adds or destroys value</h2>
+  <div class="kpis">
+    <div class="kpi"><b>{{ overview.override_rate | fmt('pct') }}</b><span>of forecasts overridden</span></div>
+    <div class="kpi"><b>{{ overview.win_rate | fmt('pct') }}</b><span>of overrides improved accuracy</span></div>
+    <div class="kpi"><b>{{ overview.up_share | fmt('pct') }}</b><span>of overrides were upward</span></div>
+    <div class="kpi"><b>{{ overview.wape_baseline | fmt('pct') }} &rarr; {{ overview.wape_final | fmt('pct') }}</b><span>WAPE before and after</span></div>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Direction</th><th>Size</th><th>Overrides</th><th>Win rate</th><th>WAPE before</th><th>WAPE after</th><th>FVA</th><th>Error units added</th></tr>
+    {% for r in overrides %}
+    <tr><td>{{ r.direction }}</td><td>{{ r.size_bucket }}</td><td>{{ r.overrides | fmt('int') }}</td>
+      <td>{{ r.win_rate | fmt('pct') }}</td><td>{{ r.wape_before | fmt('pct') }}</td><td>{{ r.wape_after | fmt('pct') }}</td>
+      <td class="{{ (r.fva_pp / 100) | fva_class }}">{{ (r.fva_pp / 100) | fmt('pp') }}</td>
+      <td>{{ r.error_units_change | fmt('signed') }}</td></tr>
+    {% endfor %}
+  </table></div>
+  <p class="note">Field studies find small adjustments mostly add noise and upward adjustments are wrong more often than downward ones. Check whether your data agrees before changing the process.</p>
+  {% endif %}
+
+  <h2>Bias alerts: tracking signal on {{ last_step }}</h2>
+  <p class="note">{{ n_flagged }} series exceed the threshold. Trigg's tracking signal = smoothed (actual - forecast) / smoothed |actual - forecast|, alpha 0.1; positive means under-forecasting. The threshold is the 95% limit for unbiased errors.</p>
+  {% if tracking %}
+  <div class="scroll"><table>
+    <tr><th>Series</th><th>Class</th><th>ABC</th><th>Tracking signal</th><th>Direction</th><th>Mean abs error</th></tr>
+    {% for r in tracking %}
+    <tr><td>{{ r.unique_id }}</td><td>{{ r.demand_class }}</td><td>{{ r.abc }}</td>
+      <td>{{ r.tracking_signal | fmt("signed") }}</td><td>{{ r.flag }}</td><td>{{ r.mad | fmt }}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+
+  <h2>Items where {{ last_step }} destroyed the most value</h2>
+  <div class="scroll"><table>
+    <tr><th>Series</th><th>Class</th><th>ABC-XYZ</th><th>Actual</th>{% for s in steps %}<th>{{ s }}</th>{% endfor %}</tr>
+    {% for r in worst_items %}
+    <tr><td>{{ r.unique_id }}</td><td>{{ r.demand_class }}</td><td>{{ r.abc_xyz }}</td><td>{{ r.actual | fmt }}</td>
+      {% for s in steps %}<td>{{ r[metric ~ '_' ~ s] | fmt('pct' if pct else 'num') }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table></div>
+
+  <h2>Method</h2>
+  <p class="note">Demand classes use the Syntetos-Boylan cut-offs (ADI 1.32, CV&sup2; 0.49) on history before the first forecast.
+  ABC uses cumulative value share (80/95); XYZ uses the coefficient of variation of period demand (0.5/1.0).
+  WAPE = sum |forecast - actual| / sum actual. Bias = sum (forecast - actual) / sum actual, positive = over-forecast.
+  MASE scales MAE by the in-sample seasonal naive MAE (season length {{ meta.season_length }}).
+  FVA = previous step's error minus this step's error; positive adds value.</p>
+
+  <footer>Generated {{ generated }} by <a href="https://github.com/msachet5/forecast-value-added">forecast-value-added</a> v{{ version }}, by Sachet Mulimani.</footer>
+</main>
+</body>
+</html>

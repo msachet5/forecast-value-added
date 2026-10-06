@@ -1,0 +1,30 @@
+site_name: forecast-value-added
+site_description: Forecast value added analysis and demand classification for demand planners
+site_author: Sachet Mulimani
+site_url: https://msachet5.github.io/forecast-value-added
+repo_url: https://github.com/msachet5/forecast-value-added
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle: { icon: material/brightness-7, name: Dark mode }
+    - scheme: slate
+      toggle: { icon: material/brightness-4, name: Light mode }
+  features: [navigation.sections, content.code.copy]
+nav:
+  - Home: index.md
+  - Quick start: quickstart.md
+  - Concepts:
+      - Forecast value added: concepts/fva.md
+      - Demand classification: concepts/demand-classes.md
+      - Error metrics: concepts/metrics.md
+      - Overrides: concepts/overrides.md
+  - Command line: cli.md
+  - Power BI: powerbi.md
+  - FAQ: faq.md
+  - References: references.md
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - toc: { permalink: true }

@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "forecast-value-added"
+version = "0.3.0"
+description = "Forecast value added (FVA) analysis and demand classification for demand planners: did your forecasting process, and your overrides, beat a naive forecast?"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Sachet Mulimani", email = "sachetmulimani@gmail.com" }]
+keywords = [
+  "forecast value added", "fva", "demand planning", "demand classification",
+  "intermittent demand", "abc xyz", "forecasting", "supply chain", "s&op",
+  "tracking signal", "forecast bias", "croston",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Intended Audience :: Manufacturing",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+  "Topic :: Office/Business",
+]
+dependencies = [
+  "polars>=1.0",
+  "numpy>=1.24",
+  "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+statsforecast = ["statsforecast>=1.7", "pandas>=2.0"]
+parquet = ["pyarrow>=14"]
+pandas = ["pandas>=2.0"]
+docs = ["mkdocs>=1.6", "mkdocs-material>=9.5"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.5", "pandas>=2.0", "pyarrow>=14"]
+all = ["forecast-value-added[statsforecast,parquet,pandas]"]
+
+[project.scripts]
+fva = "forecast_value_added.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/msachet5/forecast-value-added"
+Documentation = "https://msachet5.github.io/forecast-value-added"
+Issues = "https://github.com/msachet5/forecast-value-added/issues"
+Author = "https://cleverchainai.com"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/forecast_value_added"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE", "CITATION.cff", "CHANGELOG.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = ["E501"]

@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "forecast-value-added: forecast value added analysis and demand classification for demand planners"
+abstract: "A Python library and CLI that measures whether each step of a demand forecasting process (statistical model, planner override, consensus) improves on a naive benchmark, with Syntetos-Boylan demand classification, ABC-XYZ segmentation, override analysis and tracking signals."
+authors:
+  - family-names: Mulimani
+    given-names: Sachet
+    email: sachetmulimani@gmail.com
+version: 0.3.0
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/msachet5/forecast-value-added"
+url: "https://msachet5.github.io/forecast-value-added"
+keywords:
+  - forecast value added
+  - demand planning
+  - demand classification
+  - intermittent demand
+  - supply chain
+  - forecasting

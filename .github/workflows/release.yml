@@ -1,0 +1,28 @@
+name: Release
+
+# Tag a version (git tag v0.1.0 && git push --tags) to publish to PyPI.
+# Uses PyPI trusted publishing: add this repo as a trusted publisher on pypi.org first.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: GitHub release with notes from CHANGELOG
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

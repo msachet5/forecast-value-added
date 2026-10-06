@@ -1,0 +1,21 @@
+name: Feature request
+description: A planning question this library should answer
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: The planning question
+      description: What does a planner or S&OP meeting need to know? Start from the decision, not the code.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How you answer it today
+      description: Excel, ERP report, gut feel?
+  - type: textarea
+    id: refs
+    attributes:
+      label: References
+      description: Papers, textbook sections, vendor docs that define the method.

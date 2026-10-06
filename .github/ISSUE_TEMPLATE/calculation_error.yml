@@ -1,0 +1,31 @@
+name: Calculation error
+description: A metric, class or FVA value looks wrong
+labels: ["bug", "calculation"]
+body:
+  - type: textarea
+    id: input
+    attributes:
+      label: Minimal input
+      description: The smallest table that reproduces it (synthetic numbers are fine).
+      render: csv
+    validations:
+      required: true
+  - type: input
+    id: function
+    attributes:
+      label: Function or command
+      placeholder: stairstep(df, ["naive", "final"])
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected value and source
+      description: What you expected, and where the definition comes from (paper, textbook, vendor docs).
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: fva --version

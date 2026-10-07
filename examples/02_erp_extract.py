@@ -12,8 +12,12 @@ from forecast_value_added import analyze, fill_gaps, generate_sales
 erp = (
     generate_sales(n_items=20, n_locations=2, seed=5)
     .filter(pl.col("y") > 0)
-    .select(pl.col("item_id").alias("MATERIAL"), pl.col("location_id").alias("PLANT"),
-            pl.col("ds").alias("WEEK_START"), pl.col("y").alias("QTY"))
+    .select(
+        pl.col("item_id").alias("MATERIAL"),
+        pl.col("location_id").alias("PLANT"),
+        pl.col("ds").alias("WEEK_START"),
+        pl.col("y").alias("QTY"),
+    )
 )
 
 sales = (

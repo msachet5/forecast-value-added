@@ -39,7 +39,9 @@ from forecast_value_added import analyze, backtest, generate_sales, item_fva
 from forecast_value_added.classify import demand_profile
 
 
-def load_m5_weekly(m5_dir: Path, store: str | None, dept: str | None, max_series: int | None) -> pl.DataFrame:
+def load_m5_weekly(
+    m5_dir: Path, store: str | None, dept: str | None, max_series: int | None
+) -> pl.DataFrame:
     """Daily M5 sales to weekly (Saturday-start Walmart weeks) item-store series."""
     sales_path = m5_dir / "sales_train_evaluation.csv"
     cal_path = m5_dir / "calendar.csv"
@@ -62,14 +64,22 @@ def load_m5_weekly(m5_dir: Path, store: str | None, dept: str | None, max_series
     long = long.join(cal, on="d", how="left")
     weekly = (
         long.group_by("id", "wm_yr_wk")
-        .agg(pl.col("y").sum().cast(pl.Float64), pl.col("date").min().alias("ds"), pl.len().alias("days"))
+        .agg(
+            pl.col("y").sum().cast(pl.Float64),
+            pl.col("date").min().alias("ds"),
+            pl.len().alias("days"),
+        )
         .filter(pl.col("days") == 7)  # drop partial weeks at the edges
         .rename({"id": "unique_id"})
         .select("unique_id", "ds", "y")
         .sort("unique_id", "ds")
     )
     # drop leading zeros before an item's first sale (product not yet listed)
-    weekly = weekly.with_columns(pl.col("y").cum_sum().over("unique_id").alias("_c")).filter(pl.col("_c") > 0).drop("_c")
+    weekly = (
+        weekly.with_columns(pl.col("y").cum_sum().over("unique_id").alias("_c"))
+        .filter(pl.col("_c") > 0)
+        .drop("_c")
+    )
     return weekly
 
 
@@ -79,7 +89,9 @@ def download_m5(m5_dir: Path) -> None:
     except ImportError as exc:
         raise SystemExit("pip install datasetsforecast to use --download") from exc
     M5.download(str(m5_dir))
-    print(f"downloaded M5 into {m5_dir}; point --m5-dir at the folder holding sales_train_evaluation.csv")
+    print(
+        f"downloaded M5 into {m5_dir}; point --m5-dir at the folder holding sales_train_evaluation.csv"
+    )
 
 
 def optional_models(df: pl.DataFrame, h: int, n_windows: int, season: int) -> pl.DataFrame | None:
@@ -91,7 +103,9 @@ def optional_models(df: pl.DataFrame, h: int, n_windows: int, season: int) -> pl
         from forecast_value_added import backtest_statsforecast  # noqa: PLC0415
 
         t = time.time()
-        sf = backtest_statsforecast(df, [AutoETS(season_length=season)], h=h, n_windows=n_windows, freq="W-SAT")
+        sf = backtest_statsforecast(
+            df, [AutoETS(season_length=season)], h=h, n_windows=n_windows, freq="W-SAT"
+        )
         frames.append(sf.select("unique_id", "ds", "cutoff", pl.col("AutoETS").alias("auto_ets")))
         print(f"  AutoETS done in {time.time() - t:.0f}s")
     except ImportError:
@@ -103,15 +117,23 @@ def optional_models(df: pl.DataFrame, h: int, n_windows: int, season: int) -> pl
 
         t = time.time()
         mlf = MLForecast(
-            models={"lightgbm": lgb.LGBMRegressor(n_estimators=300, learning_rate=0.05, num_leaves=63, verbose=-1)},
+            models={
+                "lightgbm": lgb.LGBMRegressor(
+                    n_estimators=300, learning_rate=0.05, num_leaves=63, verbose=-1
+                )
+            },
             freq="W-SAT",
             lags=[1, 2, 4, 8, 13, 26, 52],
             lag_transforms={1: [RollingMean(window_size=4), RollingMean(window_size=13)]},
             date_features=["month", "week"],
         )
         cv = mlf.cross_validation(df.to_pandas(), h=h, n_windows=n_windows, step_size=h)
-        ml = pl.from_pandas(cv).with_columns(pl.col("ds").cast(pl.Date), pl.col("cutoff").cast(pl.Date))
-        frames.append(ml.select("unique_id", "ds", "cutoff", pl.col("lightgbm").clip(lower_bound=0)))
+        ml = pl.from_pandas(cv).with_columns(
+            pl.col("ds").cast(pl.Date), pl.col("cutoff").cast(pl.Date)
+        )
+        frames.append(
+            ml.select("unique_id", "ds", "cutoff", pl.col("lightgbm").clip(lower_bound=0))
+        )
         print(f"  LightGBM done in {time.time() - t:.0f}s")
     except ImportError:
         print("  mlforecast/lightgbm not installed: skipping the ML model")
@@ -123,7 +145,9 @@ def optional_models(df: pl.DataFrame, h: int, n_windows: int, season: int) -> pl
     return out
 
 
-def findings_markdown(items: pl.DataFrame, classes: pl.DataFrame, steps: list[str], bench: str) -> str:
+def findings_markdown(
+    items: pl.DataFrame, classes: pl.DataFrame, steps: list[str], bench: str
+) -> str:
     """Share of series where each method fails to beat the benchmark, by demand class."""
     data = items.join(classes.select("unique_id", "demand_class"), on="unique_id", how="left")
     lines = [
@@ -135,7 +159,12 @@ def findings_markdown(items: pl.DataFrame, classes: pl.DataFrame, steps: list[st
             continue
         col = f"wape_{step}"
         ref = f"wape_{bench}"
-        sub = data.filter(pl.col(col).is_not_null() & pl.col(ref).is_not_null() & pl.col(col).is_finite() & pl.col(ref).is_finite())
+        sub = data.filter(
+            pl.col(col).is_not_null()
+            & pl.col(ref).is_not_null()
+            & pl.col(col).is_finite()
+            & pl.col(ref).is_finite()
+        )
         fails = (sub[col] >= sub[ref]).mean() if sub.height else float("nan")
         cells = []
         for cls in ("smooth", "erratic", "intermittent", "lumpy"):
@@ -146,7 +175,9 @@ def findings_markdown(items: pl.DataFrame, classes: pl.DataFrame, steps: list[st
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--m5-dir", type=Path, default=Path("data/m5"))
     ap.add_argument("--download", action="store_true")
     ap.add_argument("--store", default="CA_1")
@@ -182,7 +213,19 @@ def main() -> None:
     extra = optional_models(df, args.h, args.windows, season) if not args.synthetic else None
     if extra is not None:
         bt = bt.join(extra, on=["unique_id", "ds", "cutoff"], how="inner")
-    steps = [c for c in ["seasonal_naive", "naive", "ses", "croston_sba", "class_aware", "auto_ets", "lightgbm"] if c in bt.columns]
+    steps = [
+        c
+        for c in [
+            "seasonal_naive",
+            "naive",
+            "ses",
+            "croston_sba",
+            "class_aware",
+            "auto_ets",
+            "lightgbm",
+        ]
+        if c in bt.columns
+    ]
 
     out = args.out / run
     out.mkdir(parents=True, exist_ok=True)

@@ -39,19 +39,19 @@ Open-source forecasting libraries (statsforecast, sktime, darts) are excellent a
 ```python
 from forecast_value_added import analyze, read_table
 
-sales = read_table("sales.csv")          # unique_id, ds, y  (one row per series per period)
+sales = read_table("sales.csv")  # unique_id, ds, y  (one row per series per period)
 forecasts = read_table("forecasts.csv")  # unique_id, ds, naive, statistical, planner, final
 
 result = analyze(
     sales,
     forecasts=forecasts,
-    steps=["naive", "statistical", "planner", "final"],   # process order, benchmark first
-    overrides=("statistical", "planner"),                   # judgmental adjustment analysis
+    steps=["naive", "statistical", "planner", "final"],  # process order, benchmark first
+    overrides=("statistical", "planner"),  # judgmental adjustment analysis
     season_length=52,
 )
 print(result.summary())
 result.to_html("fva_report.html")
-result.to_parquet("fva_tables/")   # Power BI: Get Data > Folder or Parquet
+result.to_parquet("fva_tables/")  # Power BI: Get Data > Folder or Parquet
 ```
 
 No forecast history? Run the benchmarks against your actuals and see how much a simple method would have achieved:

@@ -42,11 +42,15 @@ If your file has no `naive` column, compute one first (`fva backtest sales.csv -
 ```python
 from forecast_value_added import analyze, read_table
 
-result = analyze(read_table("sales.csv"), forecasts=read_table("forecasts.csv"),
-                 steps=["naive", "statistical", "planner", "final"],
-                 overrides=("statistical", "planner"))
-result.findings          # plain-language headlines
-result.stairstep         # polars DataFrame
-result.items             # per-item FVA
-result.to_html("report.html"); result.to_parquet("tables/")
+result = analyze(
+    read_table("sales.csv"),
+    forecasts=read_table("forecasts.csv"),
+    steps=["naive", "statistical", "planner", "final"],
+    overrides=("statistical", "planner"),
+)
+result.findings  # plain-language headlines
+result.stairstep  # polars DataFrame
+result.items  # per-item FVA
+result.to_html("report.html")
+result.to_parquet("tables/")
 ```

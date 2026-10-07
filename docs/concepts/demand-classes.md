@@ -27,6 +27,6 @@ ABC ranks series by value (units, revenue, or units times price). XYZ ranks them
 ## Options
 
 ```python
-demand_profile(df, adi_method="intervals")   # mean gap between demands, as in the paper
-abc_xyz(df, price=prices, a_share=0.7)         # value by price, custom A line
+demand_profile(df, adi_method="intervals")  # mean gap between demands, as in the paper
+abc_xyz(df, price=prices, a_share=0.7)  # value by price, custom A line
 ```

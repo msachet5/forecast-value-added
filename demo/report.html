@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forecast Value Added review (synthetic demo)</title>
+<style>
+  :root {
+    --ink: #1d2433; --muted: #5b6475; --line: #e3e6ec; --bg: #ffffff; --panel: #f6f7f9;
+    --accent: #2f5bd3; --good: #1b7f4b; --good-bg: #e5f4ec; --bad: #b42318; --bad-bg: #fdecea;
+    --bar: #9fb3e6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e6e9ef; --muted: #a2a9b8; --line: #2c3240; --bg: #141821; --panel: #1b202b;
+      --accent: #7c9cff; --good: #5fd39a; --good-bg: #16352a; --bad: #ff8a80; --bad-bg: #3a1c1c;
+      --bar: #3f5aa8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--panel); border-radius: 10px; padding: 12px 14px; }
+  .kpi b { display: block; font-size: 22px; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  ul.findings { padding-left: 18px; }
+  ul.findings li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td.good { color: var(--good); background: var(--good-bg); }
+  td.bad { color: var(--bad); background: var(--bad-bg); }
+  .note { color: var(--muted); font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  svg .lbl { fill: var(--ink); font-size: 13px; }
+  svg .val { fill: var(--muted); font-size: 12px; }
+  svg .bar { fill: var(--bar); }
+  svg .bar.best { fill: var(--accent); }
+  .matrix td { text-align: center; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 12px; }
+  @media print { h2 { break-after: avoid; } table { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Forecast Value Added review (synthetic demo)</h1>
+  <p class="sub">180 series &middot; forecasts 2025-05-19 to 2025-12-22
+  &middot; steps: naive &rarr; seasonal_naive &rarr; statistical &rarr; planner &rarr; final &middot; metric: WAPE
+</p>
+
+  <div class="kpis">
+    <div class="kpi"><b>57.4%</b><span>naive</span></div>
+    <div class="kpi"><b>58.4%</b><span>seasonal_naive &middot; FVA -1.0 pp</span></div>
+    <div class="kpi"><b>46.4%</b><span>statistical &middot; FVA +12.0 pp</span></div>
+    <div class="kpi"><b>47.3%</b><span>planner &middot; FVA -0.8 pp</span></div>
+    <div class="kpi"><b>48.4%</b><span>final &middot; FVA -1.1 pp</span></div>
+  </div>
+
+  <h2>Findings</h2>
+  <ul class="findings">
+<li>Best step overall: statistical (WAPE 46.4%).</li><li>seasonal_naive destroyed 1.0 pp of WAPE versus the step before it.</li><li>statistical added 12.0 pp of WAPE versus the step before it.</li><li>planner destroyed 0.8 pp of WAPE versus the step before it.</li><li>final destroyed 1.1 pp of WAPE versus the step before it.</li><li>seasonal_naive beats naive on 43% of series and is worse on 56%.</li><li>statistical beats seasonal_naive on 87% of series and is worse on 13%.</li><li>planner beats statistical on 51% of series and is worse on 49%.</li><li>final beats planner on 2% of series and is worse on 27%.</li><li>final beats naive on 77% of series and is worse on 23%.</li><li>20 of 180 series have a trigg tracking signal beyond +/-0.56 on &#39;final&#39;: biased, not just noisy.</li><li>Overrides touch 30% of forecasts and improve 50% of the ones they touch; 65% of overrides are upward.</li>  </ul>
+
+  <h2>The stairstep</h2>
+  <p class="note">Each step should beat the one before it. Positive FVA means the step reduced error; negative means it added error. Highlighted bar = lowest error.</p>
+  <svg viewBox="0 0 940 158" style="width:100%;max-width:940px" role="img" aria-label="Error by forecast step" xmlns="http://www.w3.org/2000/svg"><text x="142" y="22.96" class="lbl" text-anchor="end">naive</text><rect x="150" y="8" width="697.8" height="22" rx="3" class="bar"/><text x="853.8" y="22.96" class="val">57.4%</text><text x="142" y="52.96" class="lbl" text-anchor="end">seasonal_naive</text><rect x="150" y="38" width="710.0" height="22" rx="3" class="bar"/><text x="866.0" y="52.96" class="val">58.4%</text><text x="142" y="82.96000000000001" class="lbl" text-anchor="end">statistical</text><rect x="150" y="68" width="564.4" height="22" rx="3" class="bar best"/><text x="720.4" y="82.96000000000001" class="val">46.4%</text><text x="142" y="112.96000000000001" class="lbl" text-anchor="end">planner</text><rect x="150" y="98" width="574.7" height="22" rx="3" class="bar"/><text x="730.7" y="112.96000000000001" class="val">47.3%</text><text x="142" y="142.96" class="lbl" text-anchor="end">final</text><rect x="150" y="128" width="588.1" height="22" rx="3" class="bar"/><text x="744.1" y="142.96" class="val">48.4%</text></svg>
+  <div class="scroll"><table>
+    <tr><th>Step</th><th>WAPE</th><th>Bias</th><th>FVA vs previous</th><th>FVA vs naive</th><th>Actual</th><th>Forecast</th></tr>
+    <tr>
+      <td>naive</td>
+      <td>57.4%</td>
+      <td>2.3%</td>
+      <td class="neutral">n/a</td>
+      <td class="neutral">&nbsp;</td>
+      <td>81,553</td>
+      <td>83,400</td>
+    </tr>
+    <tr>
+      <td>seasonal_naive</td>
+      <td>58.4%</td>
+      <td>-3.4%</td>
+      <td class="bad">-1.0 pp</td>
+      <td class="bad">-1.0 pp</td>
+      <td>81,553</td>
+      <td>78,760</td>
+    </tr>
+    <tr>
+      <td>statistical</td>
+      <td>46.4%</td>
+      <td>1.3%</td>
+      <td class="good">+12.0 pp</td>
+      <td class="good">+11.0 pp</td>
+      <td>81,553</td>
+      <td>82,632</td>
+    </tr>
+    <tr>
+      <td>planner</td>
+      <td>47.3%</td>
+      <td>5.6%</td>
+      <td class="bad">-0.8 pp</td>
+      <td class="good">+10.1 pp</td>
+      <td>81,553</td>
+      <td>86,101</td>
+    </tr>
+    <tr>
+      <td>final</td>
+      <td>48.4%</td>
+      <td>9.1%</td>
+      <td class="bad">-1.1 pp</td>
+      <td class="good">+9.0 pp</td>
+      <td>81,553</td>
+      <td>88,945</td>
+    </tr>
+  </table></div>
+
+  <h2>How often each step helps, item by item</h2>
+  <div class="scroll"><table>
+    <tr><th>Step</th><th>Compared to</th><th>Series</th><th>Better</th><th>Worse</th><th>Volume in better</th><th>Volume in worse</th></tr>
+    <tr><td>seasonal_naive</td><td>naive</td><td>180</td>
+      <td>42.8%</td><td>56.1%</td>
+      <td>37,680</td><td>43,279</td></tr>
+    <tr><td>statistical</td><td>seasonal_naive</td><td>180</td>
+      <td>86.7%</td><td>13.3%</td>
+      <td>68,709</td><td>12,844</td></tr>
+    <tr><td>planner</td><td>statistical</td><td>180</td>
+      <td>51.1%</td><td>48.9%</td>
+      <td>28,619</td><td>52,934</td></tr>
+    <tr><td>final</td><td>planner</td><td>180</td>
+      <td>2.2%</td><td>27.2%</td>
+      <td>2,935</td><td>50,743</td></tr>
+    <tr><td>statistical</td><td>naive</td><td>180</td>
+      <td>81.1%</td><td>18.9%</td>
+      <td>73,174</td><td>8,379</td></tr>
+    <tr><td>planner</td><td>naive</td><td>180</td>
+      <td>78.9%</td><td>21.1%</td>
+      <td>63,893</td><td>17,660</td></tr>
+    <tr><td>final</td><td>naive</td><td>180</td>
+      <td>76.7%</td><td>23.3%</td>
+      <td>58,816</td><td>22,737</td></tr>
+  </table></div>
+
+  <h2>By demand class</h2>
+  <p class="note">Smooth, erratic, intermittent and lumpy series (Syntetos-Boylan) need different methods and different accuracy expectations. Cells show WAPE; colour shows FVA against the step to the left.</p>
+  <div class="scroll"><table>
+    <tr><th>Demand class</th><th>Rows</th><th>naive</th><th>seasonal_naive</th><th>statistical</th><th>planner</th><th>final</th></tr>
+    <tr><td>erratic</td><td>960</td>
+<td class="neutral">95.3%</td><td class="neutral">94.8%</td><td class="good">73.6%</td><td class="good">70.1%</td><td class="bad">70.8%</td></tr>
+    <tr><td>intermittent</td><td>1,568</td>
+<td class="neutral">142.0%</td><td class="bad">144.3%</td><td class="good">126.8%</td><td class="good">122.8%</td><td class="neutral">122.8%</td></tr>
+    <tr><td>lumpy</td><td>544</td>
+<td class="neutral">131.6%</td><td class="bad">184.8%</td><td class="good">148.7%</td><td class="good">144.6%</td><td class="neutral">144.6%</td></tr>
+    <tr><td>smooth</td><td>2,688</td>
+<td class="neutral">36.2%</td><td class="neutral">36.2%</td><td class="good">28.7%</td><td class="bad">31.6%</td><td class="bad">33.0%</td></tr>
+  </table></div>
+
+  <h2>By ABC class</h2>
+  <div class="scroll"><table>
+    <tr><th>ABC</th><th>Rows</th><th>naive</th><th>seasonal_naive</th><th>statistical</th><th>planner</th><th>final</th></tr>
+    <tr><td>A</td><td>1,760</td>
+<td class="neutral">48.6%</td><td class="good">47.2%</td><td class="good">38.1%</td><td class="bad">39.5%</td><td class="bad">41.2%</td></tr>
+    <tr><td>B</td><td>1,760</td>
+<td class="neutral">62.6%</td><td class="bad">65.7%</td><td class="good">49.7%</td><td class="bad">50.9%</td><td class="neutral">50.9%</td></tr>
+    <tr><td>C</td><td>2,240</td>
+<td class="neutral">100.8%</td><td class="bad">111.7%</td><td class="good">91.1%</td><td class="good">87.3%</td><td class="neutral">87.3%</td></tr>
+  </table></div>
+
+  <h2>ABC-XYZ matrix (series count)</h2>
+  <table class="matrix" style="max-width:360px">
+    <tr><th></th><th>X stable</th><th>Y variable</th><th>Z unpredictable</th></tr>
+<tr><td><b>A</b></td><td>34</td><td>16</td><td>5</td></tr><tr><td><b>B</b></td><td>23</td><td>13</td><td>19</td></tr><tr><td><b>C</b></td><td>0</td><td>16</td><td>54</td></tr>  </table>
+
+  <h2>Overrides: where judgment adds or destroys value</h2>
+  <div class="kpis">
+    <div class="kpi"><b>30.5%</b><span>of forecasts overridden</span></div>
+    <div class="kpi"><b>50.1%</b><span>of overrides improved accuracy</span></div>
+    <div class="kpi"><b>64.8%</b><span>of overrides were upward</span></div>
+    <div class="kpi"><b>46.4% &rarr; 47.3%</b><span>WAPE before and after</span></div>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Direction</th><th>Size</th><th>Overrides</th><th>Win rate</th><th>WAPE before</th><th>WAPE after</th><th>FVA</th><th>Error units added</th></tr>
+    <tr><td>up</td><td>25%-50%</td><td>392</td>
+      <td>38.3%</td><td>43.3%</td><td>55.3%</td>
+      <td class="bad">-12.0 pp</td>
+      <td>+797.05</td></tr>
+    <tr><td>up</td><td>10%-25%</td><td>308</td>
+      <td>34.7%</td><td>39.3%</td><td>45.7%</td>
+      <td class="bad">-6.5 pp</td>
+      <td>+265.29</td></tr>
+    <tr><td>up</td><td>&lt;10%</td><td>202</td>
+      <td>27.7%</td><td>41.1%</td><td>43.1%</td>
+      <td class="bad">-2.0 pp</td>
+      <td>+57.63</td></tr>
+    <tr><td>down</td><td>&lt;10%</td><td>181</td>
+      <td>68.5%</td><td>44.9%</td><td>42.9%</td>
+      <td class="good">+2.0 pp</td>
+      <td>-44.39</td></tr>
+    <tr><td>down</td><td>&gt;=50%</td><td>36</td>
+      <td>86.1%</td><td>110.6%</td><td>64.0%</td>
+      <td class="good">+46.5 pp</td>
+      <td>-45.61</td></tr>
+    <tr><td>down</td><td>25%-50%</td><td>165</td>
+      <td>72.1%</td><td>55.9%</td><td>51.0%</td>
+      <td class="good">+4.8 pp</td>
+      <td>-84.76</td></tr>
+    <tr><td>down</td><td>10%-25%</td><td>235</td>
+      <td>68.5%</td><td>50.7%</td><td>46.0%</td>
+      <td class="good">+4.7 pp</td>
+      <td>-118.19</td></tr>
+    <tr><td>up</td><td>&gt;=50%</td><td>236</td>
+      <td>55.9%</td><td>56.6%</td><td>53.5%</td>
+      <td class="good">+3.1 pp</td>
+      <td>-137.63</td></tr>
+  </table></div>
+  <p class="note">Field studies find small adjustments mostly add noise and upward adjustments are wrong more often than downward ones. Check whether your data agrees before changing the process.</p>
+
+  <h2>Bias alerts: tracking signal on final</h2>
+  <p class="note">20 series exceed the threshold. Trigg's tracking signal = smoothed (actual - forecast) / smoothed |actual - forecast|, alpha 0.1; positive means under-forecasting. The threshold is the 95% limit for unbiased errors.</p>
+  <div class="scroll"><table>
+    <tr><th>Series</th><th>Class</th><th>ABC</th><th>Tracking signal</th><th>Direction</th><th>Mean abs error</th></tr>
+    <tr><td>SKU0060@LOC03</td><td>lumpy</td><td>C</td>
+      <td>-0.96</td><td>over-forecast</td><td>2.41</td></tr>
+    <tr><td>SKU0044@LOC01</td><td>smooth</td><td>A</td>
+      <td>-0.88</td><td>over-forecast</td><td>34.81</td></tr>
+    <tr><td>SKU0020@LOC01</td><td>intermittent</td><td>B</td>
+      <td>-0.85</td><td>over-forecast</td><td>3.40</td></tr>
+    <tr><td>SKU0044@LOC02</td><td>smooth</td><td>A</td>
+      <td>-0.84</td><td>over-forecast</td><td>27.39</td></tr>
+    <tr><td>SKU0044@LOC03</td><td>smooth</td><td>A</td>
+      <td>-0.82</td><td>over-forecast</td><td>62.63</td></tr>
+    <tr><td>SKU0003@LOC02</td><td>smooth</td><td>A</td>
+      <td>-0.78</td><td>over-forecast</td><td>5.82</td></tr>
+    <tr><td>SKU0026@LOC01</td><td>smooth</td><td>A</td>
+      <td>-0.77</td><td>over-forecast</td><td>33.39</td></tr>
+    <tr><td>SKU0026@LOC03</td><td>smooth</td><td>A</td>
+      <td>-0.76</td><td>over-forecast</td><td>25.96</td></tr>
+    <tr><td>SKU0043@LOC01</td><td>smooth</td><td>A</td>
+      <td>-0.74</td><td>over-forecast</td><td>13.68</td></tr>
+    <tr><td>SKU0003@LOC01</td><td>smooth</td><td>A</td>
+      <td>-0.74</td><td>over-forecast</td><td>12.86</td></tr>
+    <tr><td>SKU0043@LOC03</td><td>smooth</td><td>A</td>
+      <td>-0.70</td><td>over-forecast</td><td>14.46</td></tr>
+    <tr><td>SKU0026@LOC02</td><td>smooth</td><td>A</td>
+      <td>-0.69</td><td>over-forecast</td><td>15.33</td></tr>
+    <tr><td>SKU0013@LOC01</td><td>lumpy</td><td>B</td>
+      <td>-0.67</td><td>over-forecast</td><td>4.25</td></tr>
+    <tr><td>SKU0008@LOC03</td><td>intermittent</td><td>C</td>
+      <td>-0.66</td><td>over-forecast</td><td>2.88</td></tr>
+    <tr><td>SKU0027@LOC03</td><td>intermittent</td><td>C</td>
+      <td>-0.64</td><td>over-forecast</td><td>0.76</td></tr>
+  </table></div>
+
+  <h2>Items where final destroyed the most value</h2>
+  <div class="scroll"><table>
+    <tr><th>Series</th><th>Class</th><th>ABC-XYZ</th><th>Actual</th><th>naive</th><th>seasonal_naive</th><th>statistical</th><th>planner</th><th>final</th></tr>
+    <tr><td>SKU0003@LOC01</td><td>smooth</td><td>AX</td><td>1,235</td>
+<td>41.9%</td><td>34.7%</td><td>29.1%</td><td>36.8%</td><td>40.8%</td></tr>
+    <tr><td>SKU0026@LOC02</td><td>smooth</td><td>AX</td><td>2,098</td>
+<td>22.7%</td><td>25.8%</td><td>22.0%</td><td>24.2%</td><td>27.4%</td></tr>
+    <tr><td>SKU0026@LOC01</td><td>smooth</td><td>AX</td><td>2,913</td>
+<td>34.2%</td><td>22.9%</td><td>31.8%</td><td>33.4%</td><td>36.2%</td></tr>
+    <tr><td>SKU0003@LOC03</td><td>smooth</td><td>AX</td><td>1,218</td>
+<td>30.5%</td><td>33.5%</td><td>27.8%</td><td>32.1%</td><td>34.8%</td></tr>
+    <tr><td>SKU0044@LOC03</td><td>smooth</td><td>AX</td><td>4,624</td>
+<td>36.7%</td><td>27.9%</td><td>28.9%</td><td>37.9%</td><td>40.7%</td></tr>
+    <tr><td>SKU0003@LOC02</td><td>smooth</td><td>AX</td><td>854.00</td>
+<td>44.0%</td><td>26.6%</td><td>27.7%</td><td>27.6%</td><td>30.3%</td></tr>
+    <tr><td>SKU0043@LOC01</td><td>smooth</td><td>AX</td><td>1,515</td>
+<td>32.4%</td><td>38.8%</td><td>28.0%</td><td>32.1%</td><td>34.7%</td></tr>
+    <tr><td>SKU0007@LOC01</td><td>smooth</td><td>AY</td><td>532.00</td>
+<td>24.8%</td><td>39.1%</td><td>27.8%</td><td>30.7%</td><td>33.0%</td></tr>
+    <tr><td>SKU0014@LOC02</td><td>erratic</td><td>AY</td><td>661.00</td>
+<td>87.3%</td><td>122.7%</td><td>83.9%</td><td>82.3%</td><td>84.5%</td></tr>
+    <tr><td>SKU0035@LOC03</td><td>smooth</td><td>AX</td><td>250.00</td>
+<td>37.6%</td><td>42.8%</td><td>37.0%</td><td>39.3%</td><td>41.5%</td></tr>
+  </table></div>
+
+  <h2>Method</h2>
+  <p class="note">Demand classes use the Syntetos-Boylan cut-offs (ADI 1.32, CV&sup2; 0.49) on history before the first forecast.
+  ABC uses cumulative value share (80/95); XYZ uses the coefficient of variation of period demand (0.5/1.0).
+  WAPE = sum |forecast - actual| / sum actual. Bias = sum (forecast - actual) / sum actual, positive = over-forecast.
+  MASE scales MAE by the in-sample seasonal naive MAE (season length 52).
+  FVA = previous step's error minus this step's error; positive adds value.</p>
+
+  <footer>Generated 2026-10-07 09:47 UTC by <a href="https://github.com/msachet5/forecast-value-added">forecast-value-added</a> v0.3.0, by Sachet Mulimani.</footer>
+</main>
+</body>
+</html>
